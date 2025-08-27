@@ -1,0 +1,167 @@
+<!-- templates/index.html -->
+<!-- This is the HTML file for the user interface. -->
+<!-- It uses Tailwind CSS for styling to make it look clean and modern without needing a separate CSS file. -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Feature Extractor</title>
+    <!-- Load Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* A little custom style for better presentation */
+        body { font-family: 'Inter', sans-serif; }
+        .step-card {
+            min-height: 400px; /* Ensure cards have a consistent minimum height */
+        }
+        .step-card img {
+            max-height: 300px; /* Limit image height to prevent huge uploads from breaking layout */
+            object-fit: contain; /* Ensure aspect ratio is maintained */
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+    <div class="container mx-auto p-4 md:p-8">
+        
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-900">CNN Feature Extractor</h1>
+            <p class="text-lg text-gray-600 mt-2">Visualize the core operations of a Convolutional Neural Network layer.</p>
+        </header>
+
+        <!-- The main form that controls the application state -->
+        <form method="POST" enctype="multipart/form-data" class="bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+            
+            <!-- Hidden fields to maintain the state of images across requests -->
+            <input type="hidden" name="original_b64" value="{{ original_b64 or '' }}">
+            <input type="hidden" name="convolved_b64" value="{{ convolved_b64 or '' }}">
+            <input type="hidden" name="relued_b64" value="{{ relued_b64 or '' }}">
+
+            <!-- Grid for displaying the steps -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                <!-- Card 1: Original Image & Convolution Controls -->
+                <div class="step-card bg-gray-100 p-4 rounded-xl flex flex-col justify-between border border-gray-200">
+                    <div>
+                        <h2 class="text-xl font-semibold mb-2 text-center">1. Input & Convolution</h2>
+                        <div class="flex items-center justify-center bg-white rounded-lg h-full min-h-[300px] border">
+                            {% if original_b64 %}
+                                <img src="data:image/png;base64,{{ original_b64 }}" alt="Original Image" class="rounded-md max-w-full">
+                            {% else %}
+                                <p class="text-gray-500 p-4 text-center">Upload an image to start</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <label for="image_upload" class="block text-sm font-medium text-gray-700 mb-1">Upload Image:</label>
+                        <input type="file" name="image_upload" id="image_upload" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                        
+                        <label for="filter_select" class="block text-sm font-medium text-gray-700 mt-3 mb-1">Select Filter:</label>
+                        <select name="filter_select" id="filter_select" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                            {% for f in filters %}
+                                <option value="{{ f }}">{{ f }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" name="action" value="convolve" class="w-full mt-4 bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200">
+                            Apply Convolution
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Card 2: Convolved Image & ReLU Control -->
+                <div class="step-card bg-gray-100 p-4 rounded-xl flex flex-col justify-between border border-gray-200">
+                    <div>
+                        <h2 class="text-xl font-semibold mb-2 text-center">2. Feature Map & ReLU</h2>
+                        <div class="flex items-center justify-center bg-white rounded-lg h-full min-h-[300px] border">
+                            {% if convolved_b64 %}
+                                <img src="data:image/png;base64,{{ convolved_b64 }}" alt="Convolved Image" class="rounded-md max-w-full">
+                            {% else %}
+                                <p class="text-gray-500 p-4 text-center">Awaiting convolution...</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        {% if convolved_b64 and not relued_b64 %}
+                            <button type="submit" name="action" value="relu" class="w-full bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition-colors duration-200">
+                                Apply ReLU
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Card 3: ReLU Image & Pooling Control -->
+                <div class="step-card bg-gray-100 p-4 rounded-xl flex flex-col justify-between border border-gray-200">
+                    <div>
+                        <h2 class="text-xl font-semibold mb-2 text-center">3. Rectified Map & Pooling</h2>
+                        <div class="flex items-center justify-center bg-white rounded-lg h-full min-h-[300px] border">
+                            {% if relued_b64 %}
+                                <img src="data:image/png;base64,{{ relued_b64 }}" alt="ReLU Image" class="rounded-md max-w-full">
+                            {% else %}
+                                <p class="text-gray-500 p-4 text-center">Awaiting ReLU...</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        {% if relued_b64 and not pooled_b64 %}
+                            <button type="submit" name="action" value="pool" class="w-full bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 transition-colors duration-200">
+                                Apply Max Pooling
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Card 4: Pooled Image -->
+                <div class="step-card bg-gray-100 p-4 rounded-xl flex flex-col justify-between border border-gray-200">
+                    <div>
+                        <h2 class="text-xl font-semibold mb-2 text-center">4. Pooled Feature Map</h2>
+                        <div class="flex items-center justify-center bg-white rounded-lg h-full min-h-[300px] border">
+                            {% if pooled_b64 %}
+                                <img src="data:image/png;base64,{{ pooled_b64 }}" alt="Pooled Image" class="rounded-md max-w-full">
+                            {% else %}
+                                <p class="text-gray-500 p-4 text-center">Awaiting Pooling...</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="mt-4">
+                        <!-- Final state, no more buttons needed -->
+                    </div>
+                </div>
+            </div>
+        </form>
+
+        <!-- Educational Information Section -->
+        <div class="mt-8 bg-white p-6 rounded-2xl shadow-lg border border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">How CNNs Work - Step by Step</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-blue-600 mb-2">1. Convolution</h3>
+                    <p class="text-gray-700">A filter (kernel) slides over the image, computing dot products to detect features like edges, textures, and patterns.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-green-600 mb-2">2. ReLU Activation</h3>
+                    <p class="text-gray-700">Replaces negative values with zero, introducing non-linearity and helping the network learn complex patterns.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-purple-600 mb-2">3. Max Pooling</h3>
+                    <p class="text-gray-700">Downsamples the image by taking the maximum value in each 2x2 window, reducing dimensions while preserving important features.</p>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-600 mb-2">4. Feature Learning</h3>
+                    <p class="text-gray-700">This process extracts increasingly abstract features, from simple edges to complex shapes and objects.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="mt-8 text-center text-gray-500 text-sm">
+            <p>CNN Feature Extractor - A Deep Learning Visualization Tool</p>
+        </footer>
+    </div>
+
+</body>
+</html>
